@@ -12,6 +12,14 @@
 //   scope             <- Graph directoryScopeId ('/' for tenant-wide)
 //   plane             <- hardcoded 'entra' (directory role assignments are always Entra plane)
 
+// Known AI-agent service principal app IDs (Microsoft Copilot Studio / Power Virtual Agents).
+// Ported verbatim from the legacy Go collector (ai_classification.go).
+// To expand: add entries via PR with cited Microsoft documentation -- do not guess app IDs.
+const AI_AGENT_APP_IDS = new Set([
+  '9d8f559b-5984-46a4-902a-ad4271e83efa', // Power Virtual Agents Service (Microsoft Copilot Studio)
+  '9315aedd-209b-43b3-b149-2abff6a95d59', // Power Virtual Agents Service (Copilot Studio -- US Gov GCC)
+]);
+
 export async function collectRecords(graphApi) {
   const [rawAssignments, users, servicePrincipals, groups] = await Promise.all([
     graphApi.getDirectoryRoleAssignments(),
@@ -46,6 +54,7 @@ export async function collectRecords(graphApi) {
       displayName: sp.displayName || sp.id,
       type: sp.servicePrincipalType === 'ManagedIdentity' ? 'managedIdentity' : 'servicePrincipal',
       appId: sp.appId || '',
+      isAiAgent: AI_AGENT_APP_IDS.has(sp.appId || ''),
     });
   }
 
