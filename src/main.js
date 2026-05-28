@@ -1,5 +1,9 @@
 import { PublicClientApplication } from '@azure/msal-browser';
 import { GraphAPI } from './graph.js';
+import { collectRecords } from './collector.js';
+import { evaluateAllRules } from './engine.js';
+import { rules } from './rules/index.js';
+import { renderTemplate, buildTemplateContext } from './render.js';
 
 // ============================================
 // Security helper
@@ -27,7 +31,7 @@ const msalConfig = {
 };
 
 const loginRequest = {
-  scopes: ['User.Read', 'Directory.Read.All'],
+  scopes: ['User.Read', 'Directory.Read.All', 'RoleManagement.Read.Directory'],
 };
 
 let graphApi = null;
@@ -103,6 +107,103 @@ async function initializeApp(account) {
 }
 
 // ============================================
+// Scan
+// ============================================
+async function runScan() {
+  const btn = document.getElementById('btn-scan');
+  const statusEl = document.getElementById('scan-status');
+  if (btn) btn.disabled = true;
+  if (statusEl) statusEl.textContent = '';
+
+  document.getElementById('prescan-prompt')?.classList.add('hidden');
+
+  try {
+    showLoading('Collecting tenant data...');
+    const records = await collectRecords(graphApi);
+
+    showLoading('Evaluating detection rules...');
+    const matches = evaluateAllRules(rules, records);
+
+    hideLoading();
+    renderFindings(matches);
+
+    if (statusEl) {
+      const principalCount = new Set(matches.map(m => m.principal.id)).size;
+      statusEl.textContent = matches.length > 0
+        ? `${matches.length} finding${matches.length !== 1 ? 's' : ''} across ${principalCount} principal${principalCount !== 1 ? 's' : ''}`
+        : 'Scan complete';
+    }
+  } catch (err) {
+    console.error('Scan failed:', err);
+    hideLoading();
+    renderScanError(err.message || String(err));
+    if (statusEl) statusEl.textContent = 'Scan failed';
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+// ============================================
+// Findings render
+// ============================================
+function renderFindings(matches) {
+  const container = document.getElementById('findings-container');
+  if (!container) return;
+
+  if (matches.length === 0) {
+    container.innerHTML =
+      '<div class="pre-scan">' +
+        '<h3>No findings</h3>' +
+        '<p>No toxic permission combinations detected for the active detection rules.</p>' +
+      '</div>';
+    return;
+  }
+
+  const cards = matches.map(({ rule, principal, scope }) => {
+    const ctx = buildTemplateContext(principal, scope);
+    const summary = renderTemplate(rule.finding.summary, ctx);
+    const sev = escapeHtml(rule.severity);
+    const principalType = escapeHtml(principal.type);
+    const displayName = escapeHtml(principal.displayName);
+
+    return (
+      '<div class="gap-card ' + sev + '">' +
+        '<div class="gap-card-top">' +
+          '<span class="gap-sev-badge ' + sev + '">' + sev + '</span>' +
+          '<span class="gap-type-tag">' + escapeHtml(rule.id) + '</span>' +
+          '<span class="gap-card-title">' + escapeHtml(rule.finding.title) + '</span>' +
+        '</div>' +
+        '<div class="gap-card-desc">' + escapeHtml(summary) + '</div>' +
+        '<div class="gap-rec"><strong>Remediation:</strong> ' +
+          escapeHtml(rule.finding.remediationSummary) +
+        '</div>' +
+        '<div class="gap-card-footer">' +
+          '<span class="gap-context">' +
+            'Principal: ' + displayName + ' &bull; Type: ' + principalType +
+            ' &bull; Scope: ' + escapeHtml(scope) +
+          '</span>' +
+        '</div>' +
+      '</div>'
+    );
+  });
+
+  container.innerHTML = '<div class="gap-list">' + cards.join('') + '</div>';
+}
+
+function renderScanError(message) {
+  const container = document.getElementById('findings-container');
+  if (!container) return;
+  container.innerHTML =
+    '<div class="gap-card high">' +
+      '<div class="gap-card-top">' +
+        '<span class="gap-sev-badge high">ERROR</span>' +
+        '<span class="gap-card-title">Scan failed</span>' +
+      '</div>' +
+      '<div class="gap-card-desc">' + escapeHtml(message) + '</div>' +
+    '</div>';
+}
+
+// ============================================
 // UI helpers
 // ============================================
 function showSignIn() {
@@ -117,6 +218,7 @@ function showDashboard(account, tenantName) {
   if (userEl) userEl.textContent = account.name || account.username || '';
   const tenantEl = document.getElementById('tenant-name');
   if (tenantEl) tenantEl.textContent = escapeHtml(tenantName);
+  document.getElementById('btn-scan')?.addEventListener('click', runScan);
 }
 
 function showLoading(text) {

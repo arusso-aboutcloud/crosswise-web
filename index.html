@@ -79,10 +79,14 @@
       </header>
 
       <main id="main-content">
-        <div class="section-card">
-          <div class="section-card-body">
-            <p>Authentication successful. Tenant data loaded. Detection rules coming soon.</p>
-          </div>
+        <div class="pre-scan" id="prescan-prompt">
+          <h3>Ready to scan your tenant</h3>
+          <p>Click <strong>Scan Tenant Now</strong> to evaluate your tenant against active detection rules. All analysis runs in your browser — no data leaves your machine.</p>
+        </div>
+        <div id="findings-container"></div>
+        <div class="scan-bar">
+          <button id="btn-scan" class="btn-primary btn-scan">Scan Tenant Now</button>
+          <span id="scan-status" style="font-size:0.85rem;color:var(--text-secondary);"></span>
         </div>
       </main>
 

@@ -79,6 +79,14 @@ export class GraphAPI {
     return data.value?.[0] || null;
   }
 
+  async getDirectoryRoleAssignments() {
+    return this.fetchAll('/roleManagement/directory/roleAssignments?$top=999');
+  }
+
+  async getGroups() {
+    return this.fetchAll('/groups?$select=id,displayName&$top=999');
+  }
+
   async getUsers() {
     return this.fetchAll(
       '/users?$select=id,displayName,userPrincipalName,userType,createdDateTime&$top=999'
