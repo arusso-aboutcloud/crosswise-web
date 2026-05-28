@@ -1,0 +1,117 @@
+# Security scan with Trivy
+name: Security Scan
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 6 * * 1'  # every Monday 6AM UTC
+
+permissions:
+  contents: read
+  security-events: write
+  checks: write
+
+jobs:
+  trivy-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build (for filesystem scan)
+        run: npm run build
+        env:
+          VITE_CLIENT_ID: dummy
+          VITE_TENANT_ID: dummy
+
+      - name: Run Trivy vulnerability scanner (filesystem)
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: sarif
+          output: trivy-fs-results.sarif
+          severity: CRITICAL,HIGH,MEDIUM
+          exit-code: 0
+          scanners: vuln,secret,misconfig
+
+      - name: Upload Trivy filesystem results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        continue-on-error: true
+        with:
+          sarif_file: trivy-fs-results.sarif
+          category: trivy-fs
+
+      - name: Run Trivy on repo (table output)
+        uses: aquasecurity/trivy-action@v0.36.0
+        if: always()
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: table
+          exit-code: 0
+          severity: CRITICAL,HIGH,MEDIUM
+
+      - name: Run Trivy on npm dependencies (report HIGH)
+        uses: aquasecurity/trivy-action@v0.36.0
+        if: always()
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: table
+          exit-code: 0
+          severity: HIGH
+          scanners: vuln
+          ignore-unfixed: true
+
+      # Fail the build on fixable CRITICAL dependency vulnerabilities so they
+      # cannot be merged unnoticed.
+      - name: Run Trivy on npm dependencies (fail on CRITICAL)
+        uses: aquasecurity/trivy-action@v0.36.0
+        if: always()
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: table
+          exit-code: 1
+          severity: CRITICAL
+          scanners: vuln
+          ignore-unfixed: true
+
+      - name: Run Trivy on Dockerfile (if exists)
+        uses: aquasecurity/trivy-action@v0.36.0
+        if: hashFiles('Dockerfile') != ''
+        continue-on-error: true
+        with:
+          scan-type: config
+          scan-ref: .
+          format: table
+          exit-code: 0
+          severity: CRITICAL,HIGH
+
+      - name: Generate Trivy summary
+        run: |
+          echo "### Trivy Security Scan Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Category | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Filesystem (vulns + secrets + misconfigs) | SARIF uploaded to Security tab |" >> $GITHUB_STEP_SUMMARY
+          echo "| NPM dependencies (CRITICAL/HIGH) | Scanned |" >> $GITHUB_STEP_SUMMARY
+          echo "| IaC misconfigurations | Scanned |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "See GitHub Security > Code Scanning for the full report" >> $GITHUB_STEP_SUMMARY
+
+

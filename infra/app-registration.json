@@ -1,0 +1,44 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "description": "EntraPass Scanner - App Registration with PKCE + Graph delegated permissions",
+    "author": "EntraPass",
+    "license": "MIT"
+  },
+  "parameters": {
+    "appName": {
+      "type": "string",
+      "defaultValue": "entrapass-scanner",
+      "metadata": { "description": "Base name for the app registration" }
+    },
+    "redirectUri": {
+      "type": "string",
+      "defaultValue": "http://localhost:5173",
+      "metadata": { "description": "SPA redirect URI (your EntraPass portal URL)" }
+    },
+    "tenantId": {
+      "type": "string",
+      "metadata": { "description": "Your Microsoft Entra ID tenant ID" }
+    }
+  },
+  "variables": {
+    "uniqueSuffix": "[uniqueString(resourceGroup().id, parameters('tenantId'))]",
+    "displayName": "[concat(parameters('appName'), '-', variables('uniqueSuffix'))]"
+  },
+  "resources": [],
+  "outputs": {
+    "displayName": {
+      "type": "string",
+      "value": "[variables('displayName')]"
+    },
+    "clientId": {
+      "type": "string",
+      "value": "[variables('displayName')]"
+    },
+    "instructions": {
+      "type": "string",
+      "value": "[concat('Deployment created the scaffolding for: ', variables('displayName'), '.\\n\\nTo create the App Registration:\\n\\nOption 1 - Azure Portal:\\n1. Go to Azure Portal > App Registrations > New Registration\\n2. Name: ', variables('displayName'), '\\n3. Accounts: Only this organizational directory\\n4. Redirect URI: SPA -> ', parameters('redirectUri'), '\\n5. Click Register\\n6. API Permissions > Add > Microsoft Graph > Delegated permissions\\n7. Add: User.Read, User.Read.All, Device.Read.All, Policy.Read.All, Application.Read.All, AuditLog.Read.All, Organization.Read.All\\n8. Grant admin consent\\n\\nOption 2 - PowerShell (run in Cloud Shell):\\nConnect-MgGraph -Scopes Application.ReadWrite.All\\n$app = New-MgApplication -DisplayName \"', variables('displayName'), '\" -SignInAudience AzureADMyOrg -Spa @{RedirectUris=@(\"', parameters('redirectUri'), '\")}\\n$requiredAccess = @(\\n  @{ResourceAppId=\"00000003-0000-0000-c000-000000000000\"; ResourceAccess=@( @{Id=\"e1fe6dd8-ba31-4d61-89e7-88639da4683d\"; Type=\"Scope\"},@{Id=\"a154be20-db9c-4678-8ab7-66f6cc099a59\"; Type=\"Scope\"},@{Id=\"951183d1-1a61-466f-a6d1-1fde911bfd95\"; Type=\"Scope\"},@{Id=\"572fea84-0151-49b2-9301-11cb16974376\"; Type=\"Scope\"},@{Id=\"c79f8feb-a9db-4090-85f9-90d820caa0eb\"; Type=\"Scope\"},@{Id=\"e4c9e354-4dc5-45b8-9e7c-e1393b0b1a20\"; Type=\"Scope\"},@{Id=\"4908d5b9-3fb2-4b1e-9336-1888b7937185\"; Type=\"Scope\"} )}\\n)\\nUpdate-MgApplication -ApplicationId $app.Id -RequiredResourceAccess $requiredAccess\\nWrite-Host \"Client ID: $($app.AppId)\"')]"
+    }
+  }
+}
