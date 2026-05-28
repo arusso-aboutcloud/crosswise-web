@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-EntraPass is a browser-only SPA deployed continuously to Cloudflare Pages.
+Crosswise is a browser-only SPA deployed continuously to Cloudflare Pages.
 There are no long-lived release branches — users always receive the latest
 deployed version automatically. Security fixes are applied to `main` and
 promoted to production within one business day.
@@ -12,7 +12,7 @@ promoted to production within one business day.
 | Latest deployed (`main`) | Supported |
 | Any pinned or self-hosted fork | Not supported |
 
-If you are self-hosting EntraPass, keep your fork in sync with `main` to
+If you are self-hosting Crosswise, keep your fork in sync with `main` to
 receive security fixes.
 
 ---
@@ -22,14 +22,14 @@ receive security fixes.
 **Please do not open a public GitHub Issue for security vulnerabilities.**
 
 Report privately via
-[GitHub Security Advisories](https://github.com/arusso-aboutcloud/EntraPass/security/advisories/new).
+[GitHub Security Advisories](https://github.com/arusso-aboutcloud/crosswise-web/security/advisories/new).
 This lets us triage and patch before public disclosure.
 
 Include as much of the following as possible:
 
 - A clear description of the vulnerability and its impact
 - Steps to reproduce (or a proof-of-concept)
-- The browser, OS, and EntraPass version (URL + date is sufficient)
+- The browser, OS, and Crosswise version (URL + date is sufficient)
 - Any relevant network traces or screenshots (redact tenant data)
 
 ### Response timeline
@@ -43,7 +43,7 @@ Include as much of the following as possible:
 
 | Severity | Fix target |
 |----------|------------|
-| Critical (data exfiltration, token theft, auth bypass) | Within 24–48 hours |
+| Critical (data exfiltration, token theft, auth bypass) | Within 24-48 hours |
 | High (XSS, CSP bypass, credential leak) | Within 7 days |
 | Medium (information disclosure, CORS misconfiguration) | Within 30 days |
 | Low (hardening improvements, minor info leaks) | Next regular release |
@@ -58,63 +58,41 @@ you prefer to remain anonymous.
 
 Understanding the architecture helps scope valid reports.
 
-### What EntraPass does
+### What Crosswise does
 
 - Runs entirely in the **user's browser** — no server-side processing of tenant data
-- Authenticates via **PKCE** (no client secret, no implicit flow)
+- Authenticates via **PKCE S256** (no client secret, no implicit flow)
 - Makes **read-only** Microsoft Graph API calls using a delegated access token
-- Stores state in **`sessionStorage`** only (cleared when the tab closes)
-- Optionally sends a **count-only summary** to Cloudflare Workers AI (AI Assistant tab, off by default, no UPNs or user names)
+- Stores tokens and state in **`sessionStorage`** only (cleared when the tab closes)
 
-### What EntraPass does not do
+### What Crosswise does not do
 
 - Transmit, log, or persist any tenant data to Aboutcloud servers
 - Store credentials, tokens, or tenant data beyond the browser session
 - Use a backend API that holds tenant information
 - Request write permissions to Microsoft Graph
+- Access user content (mail, files, messages, calendars)
+
+### Required Graph permissions (delegated, read-only)
+
+| Permission | Purpose | Write access granted? |
+|---|---|---|
+| `User.Read` | Sign in and read the signed-in user's profile | No |
+| `Directory.Read.All` | Read directory roles, role assignments, users, groups | No |
+| `RoleManagement.Read.Directory` | Read directory RBAC role definitions and assignments | No |
+| `Application.Read.All` | Read app registrations and service principals | No |
+| `Policy.Read.All` | Read Conditional Access and authentication-method policies | No |
+
+None of these permissions grant write access or access to user-generated content.
 
 ### Trust boundaries
 
 | Boundary | Notes |
 |----------|-------|
-| Browser ↔ Microsoft Graph API | TLS; bearer token issued by the user's own Entra ID tenant |
-| Browser ↔ Cloudflare Pages | TLS; Cloudflare WAF + security headers enforced |
-| Browser ↔ Cloudflare Workers AI | TLS; opt-in; count-only payload; rate-limited; CORS-restricted |
+| Browser to Microsoft Entra ID | TLS; PKCE S256 authorization code flow |
+| Browser to Microsoft Graph API | TLS; short-lived bearer token issued by the user's own tenant |
+| Browser to Cloudflare Pages | TLS; security headers enforced via `public/_headers` |
 | GitHub Actions | Trivy filesystem scan + Dependabot on every push |
-
----
-
-## AI Assistant Guardrails
-
-The optional AI Assistant (`functions/ai/ask.js`) enforces the following controls to
-prevent misuse and information leakage:
-
-**No-invented-URLs rule (security control)**
-The SYSTEM_PROMPT contains a fixed list of 22 verified `learn.microsoft.com` URLs.
-The model is instructed that it must not include any URL not in that list and must
-never invent or modify URLs. This prevents the model from hallucinating plausible-looking
-but incorrect or malicious links that could be presented as official Microsoft
-documentation.
-
-Enforcement:
-- Only `learn.microsoft.com` canonical URLs are permitted (no `aka.ms` shortlinks,
-  which can silently redirect to different destinations after deployment).
-- Every URL in the list was fetched and confirmed to return HTTP 200 with the
-  expected Microsoft Learn page title before it was added to the list.
-- The list is embedded in source code and can only be changed via a repository commit
-  — the model cannot modify or extend it at runtime.
-
-**Prompt injection and off-topic filters**
-Requests containing prompt-injection patterns or destructive-intent keywords are
-rejected before reaching the model.
-
-**Payload size and rate limiting**
-Requests larger than 512 KB or exceeding 20 requests per minute per IP are rejected.
-
-**Count-only data policy**
-When the AI Assistant is used in Cloudflare Free AI mode, only aggregate counts
-(users by tier, app counts, policy counts) are included in the model context — no
-UPNs, no display names, no tenant IDs, no credentials.
 
 ---
 
@@ -126,8 +104,7 @@ The following are considered valid security reports:
 - **CSP bypass** — circumventing the `Content-Security-Policy` header
 - **Token exposure** — access tokens leaving `sessionStorage` or being sent to a third party
 - **PKCE flow weaknesses** — state/nonce bypass, redirect URI manipulation
-- **Data exfiltration** — tenant data sent to any host other than Microsoft Graph / Entra ID
-- **AI payload leakage** — personally identifiable information included in the Workers AI request body
+- **Data exfiltration** — tenant data sent to any host other than `graph.microsoft.com` or `login.microsoftonline.com`
 - **Supply chain** — malicious code introduced via an npm dependency
 - **Cloudflare misconfiguration** — WAF rules or security headers that fail to block a known attack class
 - **Sensitive data in source** — credentials, tokens, or operator-specific values committed to the public repository
@@ -154,7 +131,7 @@ The following are **not** considered valid reports for this project:
 
 - **Dependabot** is enabled and opens PRs for outdated or vulnerable npm dependencies automatically.
 - **Trivy** runs a filesystem vulnerability scan on every push and pull request (`.github/workflows/security-scan.yml`).
-- Scan results are uploaded to GitHub Security → Code scanning alerts.
+- Scan results are uploaded to GitHub Security Code scanning alerts.
 
 ---
 
@@ -162,4 +139,4 @@ The following are **not** considered valid reports for this project:
 
 For questions about this policy or the security model contact
 [security@aboutcloud.io](mailto:security@aboutcloud.io) or open a
-[private advisory](https://github.com/arusso-aboutcloud/EntraPass/security/advisories/new).
+[private advisory](https://github.com/arusso-aboutcloud/crosswise-web/security/advisories/new).
