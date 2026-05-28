@@ -219,6 +219,32 @@ function showDashboard(account, tenantName) {
   const tenantEl = document.getElementById('tenant-name');
   if (tenantEl) tenantEl.textContent = escapeHtml(tenantName);
   document.getElementById('btn-scan')?.addEventListener('click', runScan);
+
+  // Dev-only demo button — Vite replaces import.meta.env.DEV with `false` in
+  // production builds, making this entire block dead code that is tree-shaken out.
+  // The dynamic import inside also disappears, so demo-data.js never enters the
+  // production bundle.
+  if (import.meta.env.DEV) {
+    const scanBar = document.querySelector('.scan-bar');
+    if (scanBar) {
+      const demoBtn = document.createElement('button');
+      demoBtn.className = 'btn-ghost';
+      demoBtn.style.cssText = 'font-size:0.78rem;opacity:0.65;border:1px dashed var(--border);';
+      demoBtn.textContent = 'Demo (dev only)';
+      demoBtn.addEventListener('click', async () => {
+        const { demoRecords } = await import('./demo-data.js');
+        document.getElementById('prescan-prompt')?.classList.add('hidden');
+        const matches = evaluateAllRules(rules, demoRecords);
+        renderFindings(matches);
+        const statusEl = document.getElementById('scan-status');
+        if (statusEl) {
+          statusEl.textContent = 'Demo scan (synthetic data) -- '
+            + matches.length + ' finding' + (matches.length !== 1 ? 's' : '');
+        }
+      });
+      scanBar.appendChild(demoBtn);
+    }
+  }
 }
 
 function showLoading(text) {
