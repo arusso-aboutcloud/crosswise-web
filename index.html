@@ -107,6 +107,80 @@
         </div>
 
       </div><!-- /.landing-grid -->
+
+      <!-- Feature set strip — full width, below the hero grid -->
+      <div class="landing-features">
+        <p class="lf-eyebrow">What Crosswise detects</p>
+        <div class="lf-grid">
+
+          <div class="lf-card">
+            <div class="lf-card-top">
+              <span class="lf-sev lf-sev-critical">Critical</span>
+              <span class="lf-tag">Privilege escalation</span>
+            </div>
+            <h3 class="lf-title">Direct path to Global Administrator</h3>
+            <p class="lf-desc">Privileged Role Administrator can self-assign Global Admin in a single Graph API call — no credential manipulation, no intermediary. Hybrid Identity Administrator can reroute directory sync to elevate an attacker-controlled on-prem account. These roles are operationally equivalent to holding Global Admin directly.</p>
+            <div class="lf-rules">CW-011 &bull; CW-013</div>
+          </div>
+
+          <div class="lf-card">
+            <div class="lf-card-top">
+              <span class="lf-sev lf-sev-critical">Critical</span>
+              <span class="lf-tag">Auth takeover</span>
+            </div>
+            <h3 class="lf-title">Password reset over any user, including Global Admins</h3>
+            <p class="lf-desc">Privileged Authentication Administrator can reset passwords and manage authentication methods for any account in the tenant — including Global Administrators. The name is frequently misread as a restricted variant of Authentication Administrator. It is not. A single role holder can silently reset a Global Admin credential and assume full tenant control.</p>
+            <div class="lf-rules">CW-003</div>
+          </div>
+
+          <div class="lf-card">
+            <div class="lf-card-top">
+              <span class="lf-sev lf-sev-high">High</span>
+              <span class="lf-tag">Credential injection</span>
+            </div>
+            <h3 class="lf-title">App Admin plus one privileged registration equals tenant takeover</h3>
+            <p class="lf-desc">Application Administrator and Cloud Application Administrator can add credentials to any app registration in the tenant. If even one existing app holds RoleManagement.ReadWrite.Directory or equivalent, injecting a secret onto it and authenticating as that app yields Global Administrator via a legitimate token — no role assignment appears in the audit log.</p>
+            <div class="lf-rules">CW-004 &bull; CW-010</div>
+          </div>
+
+          <div class="lf-card">
+            <div class="lf-card-top">
+              <span class="lf-sev lf-sev-high">High</span>
+              <span class="lf-tag">Defense evasion</span>
+            </div>
+            <h3 class="lf-title">Silently disabling MFA enforcement and security detections</h3>
+            <p class="lf-desc">Conditional Access Administrator can create a CA policy exclusion removing MFA for any account — including Global Admins — leaving them accessible via password alone. Security Administrator can dismiss active Defender XDR alerts, weaken Identity Protection risk policies, and suppress detections, erasing the evidence of an in-progress attack without touching a single role assignment.</p>
+            <div class="lf-rules">CW-012 &bull; CW-014 &bull; CW-015</div>
+          </div>
+
+          <div class="lf-card">
+            <div class="lf-card-top">
+              <span class="lf-sev lf-sev-critical">Critical</span>
+              <span class="lf-tag">AI agent risk</span>
+            </div>
+            <h3 class="lf-title">LLM-powered identities holding dangerous roles</h3>
+            <p class="lf-desc">AI agents and Copilot automation that hold Application Administrator can execute the credential-injection escalation path at machine speed — within seconds, before any SIEM alert fires. Unlike a human administrator, AI agents never pause at confirmation dialogs, run continuously rather than episodically, and can be triggered via prompt injection in the data they process.</p>
+            <div class="lf-rules">CW-007</div>
+          </div>
+
+          <div class="lf-card lf-card-how">
+            <div class="lf-card-top">
+              <span class="lf-tag lf-tag-neutral">How it works</span>
+            </div>
+            <h3 class="lf-title">Browser-only. Delegated. Read-only. Open source.</h3>
+            <p class="lf-desc">Sign in with your own Microsoft account. Crosswise reads directory role assignments, service principals, and group memberships via Microsoft Graph using five delegated read-only permissions. All detection logic runs in your browser — no tenant data is sent anywhere. The entire codebase is MIT-licensed and auditable on GitHub.</p>
+            <div class="lf-perms">
+              <code>Directory.Read.All</code>
+              <code>RoleManagement.Read.Directory</code>
+              <code>Application.Read.All</code>
+              <code>Policy.Read.All</code>
+              <code>User.Read</code>
+            </div>
+          </div>
+
+        </div><!-- /.lf-grid -->
+      </div><!-- /.landing-features -->
+
     </div><!-- /#auth-screen -->
 
 
