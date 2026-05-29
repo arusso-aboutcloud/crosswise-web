@@ -65,6 +65,37 @@ Crosswise is **read-only** and **browser-only**:
 
 PRs that change this contract will not be merged.
 
+## Adding AI-agent app IDs
+
+CW-007 detects AI-agent service principals that hold Application Administrator.
+The "AI agent" classification is determined by membership in a curated allowlist
+at `src/data/ai-agent-app-ids.js`.
+
+**Why it is hand-curated:** Microsoft provides no API that classifies a service
+principal as an AI agent. Auto-populating the list would risk false positives in
+a security tool, which erodes user trust. Every entry is reviewed by a human.
+
+**To propose a new entry:**
+
+1. Open a PR adding an object to the `AI_AGENT_APPS` array in
+   `src/data/ai-agent-app-ids.js`:
+   ```js
+   {
+     appId:  '<the-app-id-guid>',
+     name:   '<human-readable service name>',
+     source: '<URL to Microsoft documentation or other verifiable reference>',
+   }
+   ```
+2. The `source` field must be a real, verifiable URL — a Microsoft Learn page,
+   a Power Platform admin reference, or equivalent official documentation that
+   confirms the appId belongs to the service. Unsourced entries will not be merged.
+3. `npm run test` validates every entry: GUID format, no duplicates, non-empty
+   fields. CI will fail the build if the entry is malformed.
+
+**Coverage note:** This list covers Microsoft first-party AI services only.
+Custom organizational AI agents are caught by CW-004, which fires on any
+service principal holding Application Administrator regardless of AI classification.
+
 ## Reporting security issues
 
 Please do **not** open a public issue for security vulnerabilities. Report them
