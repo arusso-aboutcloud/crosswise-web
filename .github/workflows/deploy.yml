@@ -29,9 +29,6 @@ jobs:
 
       - name: Build
         run: npm run build
-        env:
-          VITE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-          VITE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
 
       # Deploy only on push to main. Pull requests run build (above) for
       # validation but never deploy, so a PR cannot overwrite production or
@@ -51,10 +48,3 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy dist --project-name=crosswise-web
-
-      # AI is implemented as a Pages Function (functions/ai/ask.js) and deploys
-      # automatically above. No separate Worker deployment needed.
-      #
-      # One-time setup required in Cloudflare Pages dashboard:
-      #   Settings → Functions → AI Bindings → Add binding
-      #   Variable name: AI  (leave "Dataset" blank — Cloudflare fills it)

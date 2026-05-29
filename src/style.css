@@ -1,5 +1,5 @@
 /* ============================================
-   EntraPass — Design System
+   Crosswise — Design System
    Fluent-inspired · warm peach accent
    ============================================ */
 
@@ -1914,9 +1914,7 @@ footer {
   border-radius: var(--r-full);
   white-space: nowrap;
 }
-.policy-type-badge.enforces-passkey    { background: var(--good-bg);               color: var(--good);         }
 .policy-type-badge.protects-registration { background: var(--info-bg);             color: var(--info);         }
-.policy-type-badge.blocks-passkey      { background: var(--danger-bg);             color: var(--danger);       }
 .policy-type-badge.legacy-block        { background: var(--warn-bg);               color: var(--warn);         }
 .policy-type-badge.risk-based          { background: rgba(139,92,246,0.1);         color: #a78bfa;             }
 .policy-type-badge.device-compliance   { background: var(--accent-light);          color: var(--accent-hover); }
@@ -2184,7 +2182,7 @@ footer {
 }
 
 /* ============================================
-   Passkey Readiness Tab
+   Readiness Tab
    ============================================ */
 
 /* Narrative box */

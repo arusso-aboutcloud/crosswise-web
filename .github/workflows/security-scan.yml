@@ -32,9 +32,6 @@ jobs:
 
       - name: Build (for filesystem scan)
         run: npm run build
-        env:
-          VITE_CLIENT_ID: dummy
-          VITE_TENANT_ID: dummy
 
       - name: Run Trivy vulnerability scanner (filesystem)
         uses: aquasecurity/trivy-action@v0.36.0
