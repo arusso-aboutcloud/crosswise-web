@@ -4,6 +4,7 @@ import { collectRecords } from './collector.js';
 import { evaluateAllRules } from './engine.js';
 import { rules } from './rules/index.js';
 import { renderTemplate, buildTemplateContext } from './render.js';
+import { initHero } from './hero.js';
 
 // ============================================
 // Security helper
@@ -35,6 +36,7 @@ const loginRequest = {
 };
 
 let graphApi = null;
+let heroInstance = null;
 
 // ============================================
 // Bootstrap
@@ -209,11 +211,15 @@ function renderScanError(message) {
 function showSignIn() {
   document.getElementById('auth-screen').classList.remove('hidden');
   document.getElementById('dashboard').classList.add('hidden');
+  if (!heroInstance) {
+    heroInstance = initHero('hero-container');
+  }
 }
 
 function showDashboard(account, tenantName) {
   document.getElementById('auth-screen').classList.add('hidden');
   document.getElementById('dashboard').classList.remove('hidden');
+  if (heroInstance) { heroInstance.destroy(); heroInstance = null; }
   const userEl = document.getElementById('user-info');
   if (userEl) userEl.textContent = account.name || account.username || '';
   const tenantEl = document.getElementById('tenant-name');

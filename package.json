@@ -12,7 +12,8 @@
     "deploy": "npx wrangler pages deploy dist --project-name=crosswise-web"
   },
   "dependencies": {
-    "@azure/msal-browser": "^5.11.0"
+    "@azure/msal-browser": "^5.11.0",
+    "three": "^0.184.0"
   },
   "devDependencies": {
     "vite": "^8.0.14",
